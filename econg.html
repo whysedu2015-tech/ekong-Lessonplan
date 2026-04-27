@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>루체테 에콩레벨 레슨플랜 생성기</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --orange:#E67E22;--orange-dk:#CA6F1E;--orange-bg:#FEF9E7;
+  --navy:#2E5090;--bg:#f4f6f9;--card:#fff;--border:#e2e6ea;
+  --text:#1a1d23;--muted:#6b7280;--accent:#3b6d11;--danger:#dc2626;--r:10px;
+}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;min-height:100vh}
+.topbar{background:linear-gradient(135deg,#7D3C01 0%,var(--orange-dk) 60%,var(--orange) 100%);padding:0 2rem;height:56px;display:flex;align-items:center;gap:12px}
+.topbar .logo{font-weight:700;font-size:17px;color:#fff}
+.topbar .badge{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;font-size:11px;font-weight:700;padding:2px 10px;border-radius:10px}
+.topbar .sub{font-size:12px;color:rgba(255,255,255,.75)}
+.layout{max-width:1060px;margin:0 auto;padding:2rem 1.5rem 5rem}
+.pg-title{font-size:22px;font-weight:700;letter-spacing:-.5px;margin-bottom:4px}
+.pg-desc{font-size:13px;color:var(--muted);margin-bottom:2rem}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:1.5rem;margin-bottom:1.25rem;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.sec-hdr{display:flex;align-items:center;gap:8px;margin-bottom:1.25rem;padding-bottom:.75rem;border-bottom:2px solid var(--orange)}
+.sec-num{width:24px;height:24px;background:var(--orange);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.sec-title{font-size:15px;font-weight:700}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.fg{display:flex;flex-direction:column;gap:5px}
+.full{grid-column:1/-1}
+label.lbl{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+input[type=text],input[type=date],input[type=number],select,textarea{width:100%;padding:8px 11px;border:1px solid var(--border);border-radius:7px;font-family:'Noto Sans KR',sans-serif;font-size:14px;color:var(--text);background:#fafafa;outline:none;transition:border-color .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--orange-dk);background:#fff}
+textarea{resize:vertical;min-height:52px}
+.hint{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.6}
+.tog-row{display:flex;gap:1.5rem;flex-wrap:wrap}
+.tog{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none}
+.tog input{width:16px;height:16px;accent-color:var(--orange-dk);cursor:pointer}
+.tog span{font-size:13px;font-weight:500}
+.day-grp{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.day-btn{padding:6px 15px;border:1.5px solid var(--border);border-radius:20px;cursor:pointer;font-size:13px;font-weight:500;color:var(--muted);background:#fafafa;transition:all .15s;user-select:none}
+.day-btn.on{background:var(--orange);border-color:var(--orange-dk);color:#fff}
+.pa-scroll{overflow-x:auto;margin-top:.75rem}
+.pa-tbl{border-collapse:collapse;width:100%;min-width:620px}
+.pa-tbl th{background:var(--navy);color:#fff;padding:9px 12px;text-align:center;font-size:12px;font-weight:500;border:1px solid #1e3d7a;white-space:nowrap}
+.pa-tbl th.th-p{background:var(--orange);border-color:var(--orange-dk);width:64px}
+.pa-tbl td{border:1px solid #d0dce8;vertical-align:top;padding:0}
+.pa-tbl td.td-p{background:var(--orange);color:#fff;font-weight:700;text-align:center;font-size:13px;padding:8px 4px}
+.pa-cell{padding:8px 10px;background:#fafcff;min-width:160px}
+.time-inp{font-family:'DM Mono',monospace;font-size:12px;padding:4px 7px;background:#fff8f0;border:1px solid #fcd8b0;border-radius:5px;width:100%;outline:none;margin-bottom:7px}
+.time-inp:focus{background:#fffde7}
+.chip-lbl{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.r-chips{display:flex;gap:3px;flex-wrap:wrap;margin-bottom:6px}
+.r-chip{padding:3px 9px;border-radius:10px;border:1.5px solid var(--border);font-size:11px;font-weight:500;color:var(--muted);cursor:pointer;user-select:none;transition:all .12s;background:#fff;white-space:nowrap}
+.sel-r{background:#FFF8E1;border-color:#F9A825;color:#6D4C00}
+.sel-w{background:#E3F2FD;border-color:#1565C0;color:#0D3C7A}
+.sel-g{background:#E8F5E9;border-color:#2E7D32;color:#1B4D1E}
+.sel-n{background:#F3F4F6;border-color:#9CA3AF;color:#6B7280}
+.c-div{height:1px;background:#fde8ce;margin:3px 0 5px}
+.c-chips{display:flex;gap:3px;flex-wrap:wrap}
+.c-chip{padding:3px 9px;border-radius:10px;border:1.5px solid var(--border);font-size:11px;font-weight:500;color:var(--muted);cursor:pointer;user-select:none;transition:all .12s;background:#fff;white-space:nowrap}
+.c-chip.sel   {background:#E8EAF6;border-color:#3949AB;color:#1A237E}
+.c-chip.sel-sm{background:#FCE4EC;border-color:#C2185B;color:#880E4F}
+.c-chip.sel-t {background:#EDE7F6;border-color:#6A1B9A;color:#4A148C}
+.curri-box{background:var(--orange-bg);border:1px solid #fcd8b0;border-radius:8px;padding:10px 14px;margin-top:1rem;font-size:12px;color:#7D3C00;line-height:1.9}
+.hol-list{display:flex;flex-direction:column;gap:6px;margin-top:.5rem}
+.hol-item{display:flex;gap:8px;align-items:center}
+.hol-item input[type=date]{flex:0 0 148px}
+.hol-item input[type=text]{flex:1}
+.btn-rm{background:none;border:none;cursor:pointer;color:var(--danger);font-size:18px;padding:1px 6px;border-radius:4px;line-height:1}
+.btn-rm:hover{background:#fef2f2}
+.btn-add{display:inline-flex;align-items:center;gap:5px;background:none;border:1px dashed var(--border);border-radius:7px;padding:6px 12px;color:var(--muted);font-size:13px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:all .15s;margin-top:6px}
+.btn-add:hover{border-color:var(--orange-dk);color:var(--orange-dk);background:var(--orange-bg)}
+.gen-area{margin-top:2rem;display:flex;flex-direction:column;align-items:center;gap:1rem}
+.btn-gen{background:var(--orange);color:#fff;border:none;border-radius:10px;padding:14px 48px;font-size:16px;font-weight:700;font-family:'Noto Sans KR',sans-serif;cursor:pointer;transition:all .15s;box-shadow:0 2px 10px rgba(230,126,34,.3)}
+.btn-gen:hover{background:var(--orange-dk);transform:translateY(-1px)}
+.btn-gen:disabled{background:#f0b97a;cursor:not-allowed;transform:none}
+.status{font-size:13px;color:var(--muted);text-align:center}
+.status.ok{color:var(--accent);font-weight:600}
+.status.err{color:var(--danger)}
+.sess-prev{font-size:13px;color:var(--muted);text-align:center;min-height:20px}
+@media(max-width:600px){.g2{grid-template-columns:1fr}.full{grid-column:1}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="logo">루체테 어학원</div>
+  <div class="badge">에콩레벨</div>
+  <div class="sub">레슨플랜 자동 생성기 (Sprout A · Sprout B · Bud)</div>
+</div>
+<div class="layout">
+  <div class="pg-title">에콩레벨 레슨플랜 생성기</div>
+  <div class="pg-desc">설정 후 버튼을 누르면 엑셀이 자동 다운로드됩니다. 생성 후 엑셀에서 직접 수정 가능합니다.</div>
+
+  <!-- 1. 기본 정보 -->
+  <div class="card">
+    <div class="sec-hdr"><div class="sec-num">1</div><div class="sec-title">기본 정보</div></div>
+    <div class="g2">
+      <div class="fg"><label class="lbl">캠퍼스 / 클래스명</label><input type="text" id="className" value="Sprout A-1" placeholder="예: Sprout A-1"></div>
+      <div class="fg"><label class="lbl">레벨</label>
+        <select id="level" onchange="updateCurriPreview()">
+          <option value="SproutA">Sprout A</option>
+          <option value="SproutB">Sprout B</option>
+          <option value="Bud">Bud</option>
+        </select>
+      </div>
+      <div class="fg"><label class="lbl">세션 타입</label>
+        <select id="sessionType" onchange="onSessionTypeChange()">
+          <option value="2m">2개월 (기본 8주 진도)</option>
+          <option value="3m">3개월 · Lucete Jr. (12주 진도)</option>
+        </select>
+      </div>
+      <div class="fg"><label class="lbl">주차 시작 번호 (이어쓰기)</label>
+        <select id="weekOffset">
+          <option value="0">0 — 처음부터 (1주차~)</option>
+          <option value="4">4 — 5주차~</option>
+          <option value="8">8 — 9주차~</option>
+          <option value="12">12 — 13주차~</option>
+          <option value="16">16 — 17주차~</option>
+          <option value="20">20 — 21주차~</option>
+        </select>
+        <div class="hint">이어지는 세션이면 이전 세션 마지막 주 다음 번호</div>
+      </div>
+      <div class="fg full">
+        <div class="tog-row">
+          <label class="tog"><input type="checkbox" id="hasGrammar" checked><span>문법(Grammar) 수업 포함</span></label>
+          <label class="tog"><input type="checkbox" id="hasTalksam"><span>화상영어(Talksam) 포함</span></label>
+        </div>
+      </div>
+    </div>
+    <div class="curri-box" id="curriPreview"></div>
+  </div>
+
+  <!-- 2. 세션 날짜 -->
+  <div class="card">
+    <div class="sec-hdr"><div class="sec-num">2</div><div class="sec-title">세션 & 날짜 설정</div></div>
+    <div class="g2">
+      <div class="fg"><label class="lbl">세션 시작일</label><input type="date" id="startDate" value="2026-05-04" oninput="updatePreview()"></div>
+      <div class="fg">
+        <label class="lbl">총 회차 수</label>
+        <input type="number" id="totalSessions" value="24" min="1" max="120" oninput="updatePreview()" style="font-family:'DM Mono',monospace;font-size:15px;font-weight:500">
+        <div class="hint">주 횟수 × 주차 수로 자동 계산. 휴일로 늘어나면 직접 수정</div>
+      </div>
+    </div>
+    <div style="margin-top:1rem">
+      <label class="lbl">주 수업 횟수</label>
+      <div class="day-grp" id="freqBtns" style="margin-top:6px">
+        <div class="day-btn" data-freq="1" onclick="selectFreq(this)">주 1회</div>
+        <div class="day-btn" data-freq="2" onclick="selectFreq(this)">주 2회</div>
+        <div class="day-btn on" data-freq="3" onclick="selectFreq(this)">주 3회</div>
+        <div class="day-btn" data-freq="4" onclick="selectFreq(this)">주 4회</div>
+        <div class="day-btn" data-freq="5" onclick="selectFreq(this)">주 5회</div>
+      </div>
+    </div>
+    <div style="margin-top:1rem">
+      <label class="lbl">수업 요일 <span id="daySelectHint" style="font-size:11px;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">(3개 선택)</span></label>
+      <div class="day-grp" id="dayBtns">
+        <div class="day-btn on" data-day="Mon" onclick="toggleDay(this)">월 (Mon)</div>
+        <div class="day-btn"    data-day="Tue" onclick="toggleDay(this)">화 (Tue)</div>
+        <div class="day-btn on" data-day="Wed" onclick="toggleDay(this)">수 (Wed)</div>
+        <div class="day-btn"    data-day="Thu" onclick="toggleDay(this)">목 (Thu)</div>
+        <div class="day-btn on" data-day="Fri" onclick="toggleDay(this)">금 (Fri)</div>
+        <div class="day-btn"    data-day="Sat" onclick="toggleDay(this)">토 (Sat)</div>
+      </div>
+    </div>
+    <div style="margin-top:1.25rem">
+      <label class="lbl">휴일 / 휴원일</label>
+      <div class="hol-list" id="holList"></div>
+      <button class="btn-add" onclick="addHoliday()">+ 휴일 추가</button>
+    </div>
+  </div>
+
+  <!-- 3. Period 배치 -->
+  <div class="card">
+    <div class="sec-hdr"><div class="sec-num">3</div><div class="sec-title">요일 × Period 배치</div></div>
+    <div style="display:flex;align-items:center;gap:1.5rem;margin-bottom:1rem;flex-wrap:wrap">
+      <div class="fg" style="flex:0 0 auto">
+        <label class="lbl">기본 Period 수</label>
+        <div class="day-grp" id="periodBtns" style="margin-top:4px">
+          <div class="day-btn" data-p="1" onclick="selectPeriod(this)">1</div>
+          <div class="day-btn" data-p="2" onclick="selectPeriod(this)">2</div>
+          <div class="day-btn" data-p="3" onclick="selectPeriod(this)">3</div>
+          <div class="day-btn on" data-p="4" onclick="selectPeriod(this)">4</div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.7;margin-top:1rem">
+        기본값 선택 후 요일별로 개별 조정 가능합니다.<br>
+        <strong>수업1</strong>: Reading / Writing / Grammar 중 하나 → 진도 자동.<br>
+        <strong>수업2</strong>: 영어도서관·Dictation·S.M·Test 등 복수 선택 가능.
+      </div>
+    </div>
+    <div class="pa-scroll" id="paWrap"></div>
+  </div>
+
+  <!-- 4. 안내 메모 -->
+  <div class="card">
+    <div class="sec-hdr"><div class="sec-num">4</div><div class="sec-title">수업 안내 메모</div></div>
+    <div class="fg"><textarea id="note1" rows="2">    * 가정에서 리딩 과제를 밴드에 올릴 때 음원 들으면서 정확한 발음으로 10번 따라 읽는 연습 후, 영상파일 혹은 음성파일을 올려주세요.</textarea></div>
+    <div class="fg" style="margin-top:.5rem"><textarea id="note2" rows="2">* Reading, Writing 교재 다 가지고 다니세요.     * 영어도서관 숙제는 사진으로 BAND에 올려주세요.</textarea></div>
+  </div>
+
+  <div class="gen-area">
+    <div class="sess-prev" id="sessPreview"></div>
+    <button class="btn-gen" id="genBtn" onclick="generateExcel()">엑셀 레슨플랜 생성 & 다운로드</button>
+    <div class="status" id="statusMsg"></div>
+  </div>
+</div>
+
+<script>
+const DAY_KO={Mon:'월',Tue:'화',Wed:'수',Thu:'목',Fri:'금',Sat:'토'};
+const DAY_JS={Mon:1,Tue:2,Wed:3,Thu:4,Fri:5,Sat:6};
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MONTHS_KO=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+// 에콩 S.M은 Read Aloud / Writing 2가지 순환
+const SM_MODES=['Read Aloud','Writing'];
+let selectedDays=['Mon','Wed','Fri'];
+
+// ── 에콩 진도표 (8주 기본) ────────────────────
+// E레벨과 동일 구조, Wing 없음, 영어도서관 있음
+// testType: 표준진도표 Test 열 기준
+const CURRICULUM_8=[
+  {wk:1, r:'Unit 1',   w:1, voca:1,  sm:1, dic:1,    trans:null,  pat:null, testType:'Word',              lib:1},
+  {wk:2, r:'Unit 2',   w:1, voca:2,  sm:2, dic:2,    trans:null,  pat:null, testType:'Dictation+Word',    lib:2},
+  {wk:3, r:'Unit 3',   w:2, voca:3,  sm:3, dic:null, trans:'1-2', pat:null, testType:'Translation+Word',  lib:3},
+  {wk:4, r:'Unit 4',   w:2, voca:4,  sm:4, dic:null, trans:null,  pat:null, testType:'Writing+Word',      lib:4},
+  {wk:5, r:'Unit 5',   w:3, voca:5,  sm:5, dic:5,    trans:null,  pat:null, testType:'Word',              lib:5},
+  {wk:6, r:'Unit 6',   w:3, voca:6,  sm:6, dic:6,    trans:'3-5', pat:null, testType:'Dictation+Word',    lib:6},
+  {wk:7, r:'Unit 7',   w:4, voca:7,  sm:7, dic:7,    trans:null,  pat:null, testType:'Translation+Word',  lib:7},
+  {wk:8, r:'Unit 8',   w:4, voca:8,  sm:8, dic:8,    trans:'6-7', pat:null, testType:'Writing+Word',      lib:8},
+];
+
+// ── 에콩 진도표 (12주 Jr.) ────────────────────
+const CURRICULUM_12=[
+  {wk:1,  r:'Unit 1',   w:1, voca:1,  sm:1, dic:1,    trans:null,  pat:null, testType:'Word',             lib:1},
+  {wk:2,  r:'Unit 1-2', w:1, voca:2,  sm:1, dic:2,    trans:null,  pat:null, testType:'Dictation',        lib:2},
+  {wk:3,  r:'Unit 2',   w:1, voca:3,  sm:2, dic:null, trans:null,  pat:null, testType:'Translation+Word', lib:3},
+  {wk:4,  r:'Unit 3',   w:2, voca:4,  sm:3, dic:null, trans:'1-2', pat:null, testType:'Word',             lib:4},
+  {wk:5,  r:'Unit 3-4', w:2, voca:5,  sm:4, dic:null, trans:null,  pat:null, testType:'Word',             lib:5},
+  {wk:6,  r:'Unit 4',   w:2, voca:6,  sm:4, dic:null, trans:null,  pat:null, testType:'Dictation',        lib:6},
+  {wk:7,  r:'Unit 5',   w:3, voca:7,  sm:5, dic:null, trans:null,  pat:null, testType:'Writing+Word',     lib:7},
+  {wk:8,  r:'Unit 5-6', w:3, voca:8,  sm:6, dic:5,    trans:'3-5', pat:null, testType:'Translation',      lib:8},
+  {wk:9,  r:'Unit 6',   w:3, voca:9,  sm:6, dic:null, trans:null,  pat:null, testType:'Word',             lib:9},
+  {wk:10, r:'Unit 7',   w:4, voca:10, sm:7, dic:null, trans:null,  pat:null, testType:'Dictation+Word',   lib:10},
+  {wk:11, r:'Unit 7-8', w:4, voca:11, sm:7, dic:7,    trans:'6-7', pat:null, testType:'Translation+Word', lib:11},
+  {wk:12, r:'Unit 8',   w:4, voca:12, sm:8, dic:8,    trans:null,  pat:null, testType:'Writing+Word',     lib:12},
+];
+
+function getCurriculum(){
+  return document.getElementById('sessionType').value==='3m'?CURRICULUM_12:CURRICULUM_8;
+}
+function getWeekData(absIdx){
+  const c=getCurriculum();
+  return absIdx<c.length?c[absIdx]:null;
+}
+function onSessionTypeChange(){
+  autoCalcSessions();
+  updateCurriPreview();
+  updatePreview();
+}
+function updateCurriPreview(){
+  const c=getCurriculum();
+  const n=Math.min(6,c.length);
+  const st=document.getElementById('sessionType').value==='3m'?'3개월 12주':'2개월 8주';
+  const rows=c.slice(0,n).map(w=>`${w.wk}주: Reading <strong>${w.r}</strong> / Writing Unit ${w.w} / Test: ${w.testType}`).join('<br>');
+  document.getElementById('curriPreview').innerHTML=`<strong>진도 미리보기 — ${st} (처음 ${n}주)</strong><br>${rows}<br>… (진도표 기준 자동 배정)`;
+}
+
+// ── Period 기본 설정 ──────────────────────────
+const T=['2:55-3:30','3:30-4:05','4:05-4:40','4:40-5:15'];
+const DEF_PA={
+  Mon:{p1:{t:T[0],c1:'W',c2:[]},      p2:{t:T[1],c1:'W',c2:[]},              p3:{t:T[2],c1:'W',c2:[]},                  p4:{t:T[3],c1:'N',c2:['sm']}},
+  Tue:{p1:{t:T[0],c1:'W',c2:[]},      p2:{t:T[1],c1:'W',c2:[]},              p3:{t:T[2],c1:'G',c2:[]},                  p4:{t:T[3],c1:'N',c2:['sm','test']}},
+  Wed:{p1:{t:T[0],c1:'R',c2:[]},      p2:{t:T[1],c1:'R',c2:[]},              p3:{t:T[2],c1:'N',c2:['voca','dictation']},  p4:{t:T[3],c1:'N',c2:['sm']}},
+  Thu:{p1:{t:T[0],c1:'R',c2:[]},      p2:{t:T[1],c1:'W',c2:[]},              p3:{t:T[2],c1:'G',c2:[]},                  p4:{t:T[3],c1:'N',c2:['sm','test']}},
+  Fri:{p1:{t:'',  c1:'N',c2:[]},      p2:{t:'',  c1:'N',c2:[]},              p3:{t:T[2],c1:'G',c2:[]},                  p4:{t:T[3],c1:'N',c2:['test']}},
+  Sat:{p1:{t:T[0],c1:'R',c2:[]},      p2:{t:T[1],c1:'W',c2:[]},              p3:{t:T[2],c1:'G',c2:[]},                  p4:{t:T[3],c1:'N',c2:['sm','test']}},
+};
+
+const C1_OPTS=[
+  {val:'R', lbl:'Reading',  cls:'sel-r'},
+  {val:'W', lbl:'Writing',  cls:'sel-w'},
+  {val:'G', lbl:'Grammar',  cls:'sel-g'},
+  {val:'N', lbl:'없음',     cls:'sel-n'},
+];
+const C2_ACTS=[
+  {id:'voca',     lbl:'단어',        cls:'sel'},
+  {id:'reading',  lbl:'읽기',        cls:'sel'},
+  {id:'writing',  lbl:'쓰기',        cls:'sel'},
+  {id:'dictation',lbl:'Dictation',   cls:'sel'},
+  {id:'sm',       lbl:'S.M',         cls:'sel-sm'},
+  {id:'library',  lbl:'영어도서관',  cls:'sel'},
+  {id:'test',     lbl:'Test',        cls:'sel-t'},
+  {id:'vocatest', lbl:'Voca Test',   cls:'sel-t'},
+  {id:'metaverse',lbl:'Metaverse',   cls:'sel'},
+  {id:'flashie',  lbl:'Flashie',     cls:'sel'},
+  {id:'suda',     lbl:'SUDA',        cls:'sel'},
+];
+
+// ── Period Table UI ───────────────────────────
+let selectedFreq=3;
+let defaultPeriods=4;
+let dayPeriods={};
+
+function buildPATable(){
+  const days=selectedDays;
+  if(!days.length){document.getElementById('paWrap').innerHTML='<p style="color:var(--muted);font-size:13px;padding:.5rem">요일을 선택해주세요.</p>';return;}
+  const maxP=Math.max(...days.map(d=>getDayPeriods(d)));
+  let h='<table class="pa-tbl"><thead>';
+  h+='<tr><th class="th-p">Period 수</th>';
+  days.forEach(d=>{
+    const dp=getDayPeriods(d);
+    h+=`<th style="padding:6px 8px"><div style="font-size:12px;margin-bottom:4px">${DAY_KO[d]} (${d})</div>`;
+    h+=`<select onchange="changeDayPeriod('${d}',this.value)" style="font-size:11px;padding:2px 6px;border-radius:4px;border:1px solid var(--border);background:#fafafa;font-family:inherit">`;
+    [1,2,3,4].forEach(n=>{h+=`<option value="${n}"${n===dp?' selected':''}>${n} Periods</option>`;});
+    h+=`</select></th>`;
+  });
+  h+='</tr></thead><tbody>';
+  for(let p=1;p<=maxP;p++){
+    h+=`<tr><td class="td-p">P${p}</td>`;
+    days.forEach(d=>{
+      const dp=getDayPeriods(d);
+      if(p>dp){h+=`<td style="background:#f8f8f8;border:1px solid #e8e8e8"></td>`;return;}
+      const def=(DEF_PA[d]||{})['p'+p]||{t:'',c1:'N',c2:[]};
+      h+=`<td><div class="pa-cell">`;
+      h+=`<input type="text" class="time-inp" id="t_${d}_${p}" value="${def.t}" placeholder="예: 4:05-4:40">`;
+      h+=`<div class="chip-lbl">수업1</div><div class="r-chips">`;
+      C1_OPTS.forEach(o=>{
+        const s=def.c1===o.val?o.cls:'';
+        h+=`<div class="r-chip ${s}" data-day="${d}" data-p="${p}" data-val="${o.val}" onclick="selC1(this,'${o.cls}')">${o.lbl}</div>`;
+      });
+      h+=`</div><div class="c-div"></div><div class="chip-lbl">수업2</div><div class="c-chips">`;
+      C2_ACTS.forEach(a=>{
+        const s=def.c2.includes(a.id)?a.cls:'';
+        h+=`<div class="c-chip ${s}" id="c2_${d}_${p}_${a.id}" onclick="togC2(this,'${a.cls}')">${a.lbl}</div>`;
+      });
+      h+=`</div></div></td>`;
+    });
+    h+='</tr>';
+  }
+  h+='</tbody></table>';
+  document.getElementById('paWrap').innerHTML=h;
+}
+function selC1(el,cls){
+  const{day,p}=el.dataset;
+  document.querySelectorAll(`.r-chip[data-day="${day}"][data-p="${p}"]`).forEach(e=>{e.className='r-chip';});
+  el.classList.add(cls);
+}
+function togC2(el,cls){
+  const isOn=C2_ACTS.some(a=>el.classList.contains(a.cls));
+  el.className=isOn?'c-chip':`c-chip ${cls}`;
+}
+function getDayPeriods(day){return dayPeriods[day]??defaultPeriods;}
+function changeDayPeriod(day,val){dayPeriods[day]=parseInt(val);buildPATable();}
+function selectPeriod(el){
+  defaultPeriods=parseInt(el.dataset.p);
+  document.querySelectorAll('#periodBtns .day-btn').forEach(e=>e.classList.remove('on'));
+  el.classList.add('on');
+  dayPeriods={};
+  buildPATable();
+}
+function getPA(){
+  const res={};
+  selectedDays.forEach(d=>{
+    res[d]={};
+    const dp=getDayPeriods(d);
+    for(let p=1;p<=dp;p++){
+      const tel=document.getElementById(`t_${d}_${p}`);
+      const t=tel?tel.value.trim():'';
+      let c1='N';
+      document.querySelectorAll(`.r-chip[data-day="${d}"][data-p="${p}"]`).forEach(e=>{
+        if(C1_OPTS.some(o=>e.classList.contains(o.cls))) c1=e.dataset.val;
+      });
+      const c2=[];
+      C2_ACTS.forEach(a=>{
+        const el=document.getElementById(`c2_${d}_${p}_${a.id}`);
+        if(el&&el.classList.contains(a.cls)) c2.push(a.id);
+      });
+      res[d]['p'+p]={t,c1,c2};
+    }
+  });
+  return res;
+}
+
+// ── Resolve cell content ──────────────────────
+function resolveCell(c1,c2,wd,smCtr){
+  if(!wd) return '';
+  const{r,w,voca,sm,dic,trans,lib,testType}=wd;
+  const lines=[];
+  // 수업2 상단
+  if(c2.includes('voca'))     lines.push(`15분 Voca ${voca}차시 (리딩 읽기 ${voca})`);
+  if(c2.includes('reading'))  lines.push(`읽기 - Reading ${r}`);
+  if(c2.includes('writing'))  lines.push(`쓰기 - Writing unit ${w}`);
+  if(c2.includes('dictation')){
+    lines.push(dic?`유표쓰고 LAT\n20분 Dictation ${dic}`:`유표쓰고 LAT\nWriting unit ${w} 글쓰기`);
+  }
+  if(c2.includes('library'))  lines.push(`영어도서관 ${lib}권`);
+  // 수업1
+  if(c1==='R')      lines.push(`Reading ${r}`);
+  else if(c1==='W') lines.push(`Writing unit ${w}`);
+  else if(c1==='G') lines.push('Grammar Lesson');
+  // 수업2 하단
+  if(c2.includes('sm')){
+    const mode=SM_MODES[smCtr.val%2]; smCtr.val++;
+    lines.push(`20분 S.M WEEK ${sm} ${mode}\n15분 S.M WEEK ${sm} ${SM_MODES[(smCtr.val)%2]}`);
+  }
+  if(c2.includes('test')){
+    const parts=[];
+    const tt=testType||'';
+    if(tt.includes('Word'))                   parts.push(`Voca ${voca}차시`);
+    if(tt.includes('Dictation')&&dic)         parts.push(`Dictation ${dic}`);
+    if(tt.includes('Translation')&&trans)     parts.push(`Translation (${trans})`);
+    if(tt.includes('Writing'))                parts.push(`Writing Test`);
+    lines.push(`Test  (${parts.join(' / ')})`);
+  }
+  if(c2.includes('vocatest')) lines.push(`Voca Test  (${voca}차시)`);
+  if(c2.includes('metaverse'))lines.push('Metaverse');
+  if(c2.includes('flashie'))  lines.push('쓰기과제 / Flashie');
+  if(c2.includes('suda'))     lines.push('SUDA');
+  return lines.join('\n');
+}
+
+// ── XLSX helpers ──────────────────────────────
+const xl={
+  fill:a=>({patternType:'solid',fgColor:{argb:a}}),
+  fnt:(bold=true,sz=12,a='FF000000')=>({bold,sz,color:{argb:a}}),
+  bord:(c='FFB0BEC5')=>{const s={style:'thin',color:{argb:c}};return{top:s,bottom:s,left:s,right:s};},
+  aln:(wrap=true,v='middle',h='left')=>({wrapText:wrap,vertical:v,horizontal:h}),
+  col:c=>c<26?String.fromCharCode(65+c):String.fromCharCode(64+Math.floor(c/26))+String.fromCharCode(65+(c%26)),
+  A:(r,c)=>xl.col(c)+(r+1),
+};
+function mg(merges,r1,c1,r2,c2){merges.push({s:{r:r1,c:c1},e:{r:r2,c:c2}});}
+
+// ── Write month sheet ─────────────────────────
+function writeSheet(wb,monthName,monthIdx,calWeeks,cfg){
+  const ws={},merges=[];
+  ws['!rows']=[];
+  const days=selectedDays,pa=cfg.pa,holMap=cfg.holMap;
+  const dayCtrs=cfg.dayCtrs,smCtr=cfg.smCtr,startDate=cfg.startDate;
+  const level=document.getElementById('level').value;
+  const cls=document.getElementById('className').value||'Sprout-Class';
+  const colMap={};
+  let bc=2;
+  days.forEach((d,i)=>{colMap[d]=bc;bc++;if(i<days.length-1)bc++;});
+  const lastCol=Math.max(...Object.values(colMap));
+  const cw=[{wch:2},{wch:13}];
+  days.forEach((d,i)=>{cw[colMap[d]]={wch:36};if(i<days.length-1)cw[colMap[d]+1]={wch:2};});
+  ws['!cols']=cw;
+  let row=0;
+
+  // 스타일 헬퍼
+  const noFill={patternType:'none'};
+  const thin={style:'thin',color:{argb:'FF000000'}};
+  const tb=()=>({top:thin,bottom:thin,left:thin,right:thin});
+  const botOnly=()=>({bottom:thin});
+  const C=(r,c,val,bold=false,sz=12,h='center',wrap=false,bord=null)=>{
+    const a=xl.A(r,c);
+    ws[a]={v:val||'',t:'s',s:{fill:noFill,font:{bold,sz,color:{argb:'FF000000'}},alignment:{wrapText:wrap,vertical:'center',horizontal:h},border:bord||tb()}};
+  };
+
+  // Title
+  const lvLabel={SproutA:'Sprout A',SproutB:'Sprout B',Bud:'Bud'}[level]||level;
+  mg(merges,row,1,row,lastCol);
+  C(row,1,`${cls}  (${days.map(d=>d[0]).join('.')})  ${lvLabel}  ${monthName} ${cfg.year}`,true,18,'center',false,botOnly());
+  ws['!rows'][row]={hpt:36};row++;
+
+  // Notes
+  [document.getElementById('note1').value,document.getElementById('note2').value].forEach(note=>{
+    mg(merges,row,1,row,lastCol);
+    C(row,1,note,false,12,'center',true,botOnly());
+    ws['!rows'][row]={hpt:18};row++;
+  });
+
+  // Day headers
+  C(row,1,'Time',false,12,'center',false,tb());
+  days.forEach(d=>C(row,colMap[d],`${DAY_KO[d]} (${d})`,false,12,'center',false,tb()));
+  ws['!rows'][row]={hpt:22};row++;
+
+  calWeeks.forEach(week=>{
+    // Date row
+    C(row,1,'',false,12,'center',false,tb());
+    days.forEach(d=>{
+      const a=xl.A(row,colMap[d]);
+      const dt=week[d];
+      if(!dt){C(row,colMap[d],'',false,12,'center',false,tb());return;}
+      const mo=dt.getMonth()+1,da=dt.getDate();
+      const hol=holMap.get(dt.toDateString());
+      if(hol){
+        ws[a]={v:`${mo}월 ${da}일\n${hol}`,t:'s',s:{fill:{patternType:'solid',fgColor:{argb:'FFFCE4EC'}},font:{bold:true,sz:12,color:{argb:'FFCC0000'}},alignment:{wrapText:true,vertical:'center',horizontal:'center'},border:tb()}};
+      } else {
+        C(row,colMap[d],`${mo}월 ${da}일`,true,12,'center',false,tb());
+      }
+    });
+    ws['!rows'][row]={hpt:24};row++;
+
+    // Per-day counters
+    const dayWd={};
+    days.forEach(d=>{
+      const dt=week[d];
+      const isCls=dt&&dt>=startDate&&!holMap.has(dt.toDateString());
+      if(isCls){
+        const cnt=dayCtrs[d]||0;
+        dayWd[d]={wd:getWeekData(cnt),isCls:true};
+        dayCtrs[d]=cnt+1;
+      } else {
+        dayWd[d]={wd:null,isCls:false,isHol:!!(dt&&holMap.has(dt.toDateString())),isBefore:!!(dt&&dt<startDate)};
+      }
+    });
+
+    // Period rows
+    const maxP=Math.max(...days.map(d=>getDayPeriods(d)));
+    for(let p=1;p<=maxP;p++){
+      const hasTime=days.some(d=>p<=getDayPeriods(d)&&(pa[d]?.['p'+p]?.t||'').trim());
+      if(!hasTime) continue;
+      const r0=row,r1=row+1;
+      let tl='';days.forEach(d=>{const t=(pa[d]?.['p'+p]?.t||'').trim();if(t&&!tl)tl=t;});
+      mg(merges,r0,1,r1,1);
+      C(r0,1,tl,false,12,'center',false,tb());
+      ws['!rows'][r0]={hpt:24};ws['!rows'][r1]={hpt:14};
+      days.forEach(d=>{
+        mg(merges,r0,colMap[d],r1,colMap[d]);
+        const a=xl.A(r0,colMap[d]);
+        const{wd,isCls,isHol,isBefore}=dayWd[d];
+        const pCfg=pa[d]?.['p'+p]||{t:'',c1:'N',c2:[]};
+        if(p>getDayPeriods(d)){
+          ws[a]={v:'',t:'s',s:{fill:noFill,font:{sz:12},border:tb()}};
+        } else if(isHol){
+          ws[a]={v:'',t:'s',s:{fill:{patternType:'solid',fgColor:{argb:'FFFCE4EC'}},font:{sz:12,color:{argb:'FFCC0000'}},alignment:{vertical:'center',horizontal:'center'},border:tb()}};
+        } else if(isBefore||!pCfg.t.trim()||!isCls||!wd){
+          ws[a]={v:'',t:'s',s:{fill:noFill,font:{sz:12},border:tb()}};
+        } else {
+          const txt=resolveCell(pCfg.c1,pCfg.c2,wd,smCtr);
+          ws[a]={v:txt,t:'s',s:{fill:noFill,font:{bold:false,sz:12,color:{argb:'FF000000'}},alignment:{wrapText:true,vertical:'center',horizontal:'center'},border:tb()}};
+        }
+      });
+      row+=2;
+    }
+
+    // Homework — 빈칸
+    const maxHw=2;
+    mg(merges,row,1,row+maxHw-1,1);
+    C(row,1,'Homework',false,12,'center',false,tb());
+    days.forEach(d=>{
+      const{isHol}=dayWd[d];
+      for(let hi=0;hi<maxHw;hi++){
+        const a=xl.A(row+hi,colMap[d]);
+        ws[a]={v:'',t:'s',s:{fill:isHol?{patternType:'solid',fgColor:{argb:'FFFCE4EC'}}:noFill,font:{sz:12},alignment:{vertical:'top',horizontal:'center'},border:tb()}};
+        ws['!rows'][row+hi]={hpt:22};
+      }
+    });
+    row+=maxHw+1;
+  });
+
+  ws['!ref']=`A1:${xl.A(row,lastCol)}`;
+  ws['!merges']=merges;
+  XLSX.utils.book_append_sheet(wb,ws,`${cfg.year}-${MONTHS_KO[monthIdx]}`);
+}
+
+// ── Frequency & Day selection ─────────────────
+function selectFreq(el){
+  selectedFreq=parseInt(el.dataset.freq);
+  document.querySelectorAll('#freqBtns .day-btn').forEach(e=>e.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('daySelectHint').textContent=`(${selectedFreq}개 선택)`;
+  const onBtns=[...document.querySelectorAll('#dayBtns .day-btn.on')];
+  while(onBtns.length>selectedFreq) onBtns.pop().classList.remove('on');
+  selectedDays=[...document.querySelectorAll('#dayBtns .day-btn.on')].map(e=>e.dataset.day);
+  selectedDays.sort((a,b)=>DAY_JS[a]-DAY_JS[b]);
+  autoCalcSessions();
+  buildPATable();updatePreview();
+}
+function toggleDay(el){
+  const onBtns=[...document.querySelectorAll('#dayBtns .day-btn.on')];
+  if(el.classList.contains('on')){
+    if(onBtns.length<=1) return;
+    el.classList.remove('on');
+  } else {
+    if(onBtns.length>=selectedFreq) onBtns[0].classList.remove('on');
+    el.classList.add('on');
+  }
+  selectedDays=[...document.querySelectorAll('#dayBtns .day-btn.on')].map(e=>e.dataset.day);
+  selectedDays.sort((a,b)=>DAY_JS[a]-DAY_JS[b]);
+  autoCalcSessions();
+  buildPATable();
+}
+function autoCalcSessions(){
+  const is3m=document.getElementById('sessionType').value==='3m';
+  const weeks=is3m?12:8;
+  document.getElementById('totalSessions').value=(selectedDays.length||3)*weeks;
+  updatePreview();
+}
+function updatePreview(){
+  const sv=document.getElementById('startDate').value;
+  const tot=parseInt(document.getElementById('totalSessions').value)||0;
+  const el=document.getElementById('sessPreview');
+  if(!sv||!tot||!selectedDays.length){el.textContent='';return;}
+  const hm=getHolMap();
+  const{classDates}=buildCal(new Date(sv),selectedDays,tot,hm);
+  if(!classDates.length){el.textContent='';return;}
+  const f=d=>`${d.getMonth()+1}월 ${d.getDate()}일`;
+  el.textContent=`세션 기간: ${f(classDates[0])} ~ ${f(classDates[classDates.length-1])}  |  ${tot}회 (약 ${Math.ceil(tot/selectedDays.length)}주)`;
+}
+
+// ── Holidays ──────────────────────────────────
+const DEF_HOL=[
+  {d:'2026-01-01',n:'신정'},
+  {d:'2026-02-15',n:'설날 연휴'},{d:'2026-02-16',n:'설날'},{d:'2026-02-17',n:'설날 연휴'},{d:'2026-02-18',n:'설날 대체공휴일'},
+  {d:'2026-03-01',n:'삼일절'},
+  {d:'2026-05-01',n:'노동절'},{d:'2026-05-05',n:'어린이날'},{d:'2026-05-25',n:'부처님오신날'},
+  {d:'2026-06-06',n:'현충일'},
+  {d:'2026-08-15',n:'광복절'},
+  {d:'2026-09-24',n:'추석 연휴'},{d:'2026-09-25',n:'추석'},{d:'2026-09-26',n:'추석 연휴'},{d:'2026-09-28',n:'추석 대체공휴일'},
+  {d:'2026-10-09',n:'한글날'},
+  {d:'2026-12-25',n:'크리스마스'},
+];
+function addHoliday(dv='',nv=''){
+  const list=document.getElementById('holList');
+  const div=document.createElement('div');div.className='hol-item';
+  div.innerHTML=`<input type="date" value="${dv}"><input type="text" placeholder="비고" value="${nv}"><button class="btn-rm" onclick="this.parentElement.remove()">×</button>`;
+  list.appendChild(div);
+}
+function getHolMap(){
+  const map=new Map();
+  [...document.querySelectorAll('#holList .hol-item')].forEach(i=>{
+    const d=i.querySelector('input[type=date]').value;
+    const n=i.querySelector('input[type=text]').value||'휴일';
+    if(d)map.set(new Date(d).toDateString(),n);
+  });
+  return map;
+}
+
+// ── Calendar builder ──────────────────────────
+function buildCal(startDate,days,totalSess,holMap){
+  const jsMap={Mon:1,Tue:2,Wed:3,Thu:4,Fri:5,Sat:6};
+  const firstMon=new Date(startDate);
+  const dow=firstMon.getDay();
+  firstMon.setDate(firstMon.getDate()+(dow===0?-6:1-dow));
+  const needed={};days.forEach(d=>{needed[d]=totalSess;});
+  const calWeeks=[],classDates=[];
+  let cur=new Date(firstMon);
+  for(let s=0;s<100;s++){
+    const week={};let hasAny=false;
+    days.forEach(d=>{
+      const dt=new Date(cur);dt.setDate(dt.getDate()+(jsMap[d]-1));
+      if(dt<startDate){week[d]=null;return;}
+      week[d]=dt;hasAny=true;
+      if(!holMap.has(dt.toDateString())&&needed[d]>0){needed[d]--;classDates.push(new Date(dt));}
+    });
+    if(hasAny)calWeeks.push(week);
+    if(days.every(d=>needed[d]<=0))break;
+    cur.setDate(cur.getDate()+7);
+  }
+  const byMonth={};
+  calWeeks.forEach(week=>{
+    let rep=null;days.forEach(d=>{if(week[d]&&!rep)rep=week[d];});
+    if(!rep)return;
+    const mk=rep.getFullYear()*100+rep.getMonth();
+    if(!byMonth[mk])byMonth[mk]={idx:rep.getMonth(),name:MONTHS[rep.getMonth()],year:rep.getFullYear(),weeks:[]};
+    byMonth[mk].weeks.push(week);
+  });
+  return{byMonth,classDates};
+}
+
+// ── Main generator ────────────────────────────
+function generateExcel(){
+  const btn=document.getElementById('genBtn');
+  const status=document.getElementById('statusMsg');
+  try{
+    btn.disabled=true;status.className='status';status.textContent='생성 중...';
+    const cls=document.getElementById('className').value||'Sprout-Class';
+    const startVal=document.getElementById('startDate').value;
+    const tot=parseInt(document.getElementById('totalSessions').value)||24;
+    const wkOffset=parseInt(document.getElementById('weekOffset').value)||0;
+    const pa=getPA();
+    if(!startVal)throw new Error('세션 시작일을 입력해주세요.');
+    if(!selectedDays.length)throw new Error('수업 요일을 선택해주세요.');
+    const startDate=new Date(startVal);
+    const holMap=getHolMap();
+    const{byMonth}=buildCal(startDate,selectedDays,tot,holMap);
+    const wb=XLSX.utils.book_new();
+    const dayCtrs={};selectedDays.forEach(d=>{dayCtrs[d]=wkOffset;});
+    const smCtr={val:0};
+    const cfg={pa,holMap,dayCtrs,smCtr,startDate,year:startDate.getFullYear()};
+    Object.keys(byMonth).sort().forEach(mk=>{
+      const{idx,name,year,weeks}=byMonth[mk];
+      cfg.year=year;
+      writeSheet(wb,name,idx,weeks,cfg);
+    });
+    const hwR=[['날짜','비고']];
+    [...document.querySelectorAll('#holList .hol-item')].forEach(i=>{
+      const d=i.querySelector('input[type=date]').value;
+      const n=i.querySelector('input[type=text]').value;
+      if(d)hwR.push([d,n]);
+    });
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(hwR),'휴일');
+    const fname=`LessonPlan_${cls}_${startVal.replace(/-/g,'')}.xlsx`;
+    XLSX.writeFile(wb,fname);
+    status.className='status ok';
+    status.textContent=`완료! "${fname}" 다운로드되었습니다.`;
+  }catch(e){
+    status.className='status err';status.textContent='오류: '+e.message;console.error(e);
+  }finally{btn.disabled=false;}
+}
+
+// ── Init ─────────────────────────────────────
+document.addEventListener('DOMContentLoaded',()=>{
+  buildPATable();
+  DEF_HOL.forEach(h=>addHoliday(h.d,h.n));
+  document.getElementById('startDate').addEventListener('change',updatePreview);
+  document.getElementById('totalSessions').addEventListener('input',updatePreview);
+  document.getElementById('daySelectHint').textContent=`(${selectedFreq}개 선택)`;
+  updateCurriPreview();
+  autoCalcSessions();
+  updatePreview();
+});
+</script>
+</body>
+</html>
